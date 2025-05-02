@@ -9,6 +9,21 @@
             font-family: Trebuchet MS;
             font-weight: 200;
         }
+
+        .button {
+            cursor: pointer;
+            background-color: black;
+            color: white;
+            border-radius: 25px;
+            border: 2px solid black;
+            padding: 0.5em 1em;
+            transition: all 0.5s ease;
+            font-size: 1.2em; 
+            font-weight: 400;
+            margin: 1em 0 1em 0;
+            display: block;
+        }
+
         .message {
             font-weight: 400;
             transition: all 0.5s ease;
@@ -32,7 +47,8 @@
 </head>
 <body>
     <div class="wrapper">
-        <h2 id="message">Press & hold Space bar to speak.</h2>
+        <button id="btn" class="button">Tap & Hold to Speak</button>
+        <i style="color: grey;">Pressing & holding space bar also works</i>
         
         <fieldset class="p text">
             <legend class="p">You said: </legend>
@@ -51,44 +67,53 @@
         const messageElement = document.getElementById('message');
         const inputElement = document.getElementById('input');
         const outputElement = document.getElementById('output');
+        const buttonElement = document.getElementById('btn');
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.interimResults = false;
         recognition.lang = 'en-US';
         recognition.continuous = false;
 
-        const toggleMessage = () => {
-            messageElement.innerText = {
-                'Listening...': 'Press & hold Space bar to speak.',
-                'Press & hold Space bar to speak.': 'Listening...'
-            }[messageElement.innerText];
-            if (messageElement.innerText === listeningMessage) {
-                messageElement.classList.add('green');
-            } else {
-                messageElement.classList.remove('green');
-            }
-        }
+       
         let isListening = false;
-        document.addEventListener('keydown', (event) => {
-            if (event.code === 'Space') {
-                event.preventDefault();
-                speechSynthesis.cancel();
-                messageElement.innerText = listeningMessage;
-                messageElement.classList.add('green');
-                if (!isListening) {
+        const startListening = () => {
+            buttonElement.classList.add('bg-green');
+            buttonElement.innerText = listeningMessage;
+            speechSynthesis.cancel();
+            buttonElement.style.borderColor = 'green';
+            buttonElement.style.backgroundColor = 'green';
+            if (!isListening) {
                     isListening = true;
                     recognition.start();
-                }
+            }
+        }
+
+        const stopListening = () => {
+            buttonElement.style.borderColor = 'black';
+            buttonElement.style.backgroundColor = 'black';
+            buttonElement.innerText = 'Tap & Hold to Speak';
+            isListening = false;
+            recognition.stop();
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                event.preventDefault(); // Prevent default space bar action (scrolling the page)
+                startListening();
             }
         });
 
         document.addEventListener('keyup', (event) => {
             if (event.code === 'Space') {
-                isListening = false;
-                event.preventDefault();
-                toggleMessage();
-                recognition.stop();
+                stopListening();
             }
         });
+        
+
+        buttonElement.addEventListener('mousedown', startListening);
+        buttonElement.addEventListener('touchstart', startListening);
+        buttonElement.addEventListener('mouseup', stopListening);
+        buttonElement.addEventListener('mouseleave', stopListening);
+        buttonElement.addEventListener('touchend', stopListening);
 
         recognition.addEventListener('result', (event) => {
             const transcript = event.results[0][0].transcript;
