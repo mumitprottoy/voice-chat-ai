@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Chat AI</title>
+    <style>
+        * {
+            font-family: Trebuchet MS;
+            font-weight: 200;
+        }
+        .message {
+            font-weight: 400;
+            transition: all 0.5s ease;
+        }
+        .p {
+            padding: 1em;
+        }
+        .text {
+            border-radius: 5px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            margin: 1em 0 1em 0;
+        }
+        .wrapper {
+            width: 80%;
+            margin: 2em auto 0 auto;
+        }
+        .green {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <h2 id="message">Press & hold Space bar to speak.</h2>
+        
+        <fieldset class="p text">
+            <legend class="p">You said: </legend>
+            <span id="input"></span>
+        </fieldset>
+        
+        <fieldset class="p text">
+            <legend class="p">Response: </legend>
+            <span id="output"></span>
+        </fieldset>
+    </div>
+
+    <script>
+        const groqAPIKey = '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';
+        const listeningMessage = 'Listening...';
+        const messageElement = document.getElementById('message');
+        const inputElement = document.getElementById('input');
+        const outputElement = document.getElementById('output');
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+        recognition.continuous = false;
+
+        const toggleMessage = () => {
+            messageElement.innerText = {
+                'Listening...': 'Press & hold Space bar to speak.',
+                'Press & hold Space bar to speak.': 'Listening...'
+            }[messageElement.innerText];
+            if (messageElement.innerText === listeningMessage) {
+                messageElement.classList.add('green');
+            } else {
+                messageElement.classList.remove('green');
+            }
+        }
+        let isListening = false;
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                event.preventDefault();
+                speechSynthesis.cancel();
+                messageElement.innerText = listeningMessage;
+                messageElement.classList.add('green');
+                if (!isListening) {
+                    isListening = true;
+                    recognition.start();
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (event.code === 'Space') {
+                isListening = false;
+                event.preventDefault();
+                toggleMessage();
+                recognition.stop();
+            }
+        });
+
+        recognition.addEventListener('result', (event) => {
+            const transcript = event.results[0][0].transcript;
+            inputElement.innerHTML = `<p class="message">${transcript}</p>`;
+            outputElement.innerHTML = `<p class="message">Loading...</p>`;
+            console.log(transcript);
+            const prompt = transcript.replace(/[^a-zA-Z0-9 ]/g, '');
+            fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${groqAPIKey}`
+                },
+                body: JSON.stringify({
+                    "model": "llama3-8b-8192",
+                    "messages": [{
+                        "role": "user",
+                        "content": prompt
+                    }]
+                })
+            }).then(response => response.json())
+            .then(data => {
+                outputElement.innerText = data.choices[0].message.content;
+                const utterance = new SpeechSynthesisUtterance(outputElement.innerText);
+                utterance.lang = 'en-US';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                speechSynthesis.speak(utterance);
+            }).catch(error => {
+                console.error('Error:', error);
+                outputElement.innerHTML = `<p class="message">Error: ${error.message}</p>`;
+            });
+    })
+    </script>
+</body>
+</html>
