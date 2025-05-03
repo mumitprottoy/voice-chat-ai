@@ -1,5 +1,5 @@
 # AI Voice Chat (Groq-Powered)
-
+[Check it out!](https://mumitprottoy.github.io/voice-chat-ai/)
 A blazing-fast AI voice chat interface in a single **5KB HTML** file — no installs, no bloat.
 
 ## 🚀 Features
