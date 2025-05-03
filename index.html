@@ -144,7 +144,7 @@
                 speechSynthesis.speak(utterance);
             }).catch(error => {
                 console.error('Error:', error);
-                outputElement.innerHTML = `<p class="message">Error: ${error.message}</p>`;
+                outputElement.innerHTML = `<p class="message">Error: Invalid API key.</p>`;
             });
     })
     </script>
